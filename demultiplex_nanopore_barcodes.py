@@ -24,9 +24,12 @@ def fast_fuzz(s1, s2):
 		return fuzz.partial_ratio(s1, s2)
 
 
-def find_barcode(seq, barcodes, min_score, max_ambiguity):
+def find_barcode(seq, barcodes, min_score, max_ambiguity, stored_results):
 	scores = []
 	names = []
+
+	if seq in stored_results.keys():
+		return stored_results[seq]
 
 	for name, bc in barcodes.items():
 		score = fast_fuzz(seq, bc)
@@ -35,13 +38,15 @@ def find_barcode(seq, barcodes, min_score, max_ambiguity):
 
 	# Reject if similar to >1 barcode (ambiguous)
 	if len([a for a in scores if a > max_ambiguity]) > 1:
-		return -1
+		stored_results[seq] = -1
 
-	if max(scores) >= min_score:
-		return names[scores.index(max(scores))]
+	elif max(scores) >= min_score:
+		stored_results[seq] = names[scores.index(max(scores))]
 
-	# else...
-	return -1
+	else:
+		stored_results[seq] = -1
+	
+	return stored_results[seq], stored_results
 
 
 def initialise_d(forward_primers, reverse_primers):
@@ -112,7 +117,8 @@ def main():
 	print(reverse_primers)
 	print(to_write_d)
 
-	stored_results = {}
+	stored_results1 = {}
+	stored_results2 = {}
 
 	with dnaio.open(args.fastq) as file:
 		since_written = 0
@@ -132,8 +138,8 @@ def main():
 				s1 = seq[0:args.length]
 				s2 = seq[-args.length:]
 
-				bc1, stored_results = find_barcode(s1, forward_primers, args.min_score, args.max_ambiguity, stored_results)
-				bc2, stored_results = find_barcode(s2, reverse_primers, args.min_score, args.max_ambiguity, stored_results)
+				bc1, stored_results1 = find_barcode(s1, forward_primers, args.min_score, args.max_ambiguity, stored_results1)
+				bc2, stored_results2 = find_barcode(s2, reverse_primers, args.min_score, args.max_ambiguity, stored_results2)
 
 				if rc:
 					reverse_results = [bc1, bc2]
