@@ -20,38 +20,41 @@ def main():
 
 		out.write("record,reference,secondary,junctions\n")
 		skipped = 0
-		for record in bam:
-			if record.flag == 256:
-				secondary = True
-			else:
-				secondary = False
+		try:
+			for record in bam:
+				if record.flag == 256:
+					secondary = True
+				else:
+					secondary = False
 
-			record_number += 1
+				record_number += 1
 
-			if record_number % 10_000 == 0:
-				print(record_number)
+				if record_number % 10_000 == 0:
+					print(record_number)
 
-			positions = record.get_reference_positions()
+				positions = record.get_reference_positions()
 
-			ref = record.reference_name
-			junctions = []
+				ref = record.reference_name
+				junctions = []
 
-			for i in range(len(positions) - 1):
-				distance = positions[i + 1] - positions[i]
-				if distance >= args.min_intron_length:
-					junctions.append(str(positions[i]) + "-" + str(positions[i + 1]))
+				for i in range(len(positions) - 1):
+					distance = positions[i + 1] - positions[i]
+					if distance >= args.min_intron_length:
+						junctions.append(str(positions[i]) + "-" + str(positions[i + 1]))
 
-			to_write += ','.join([str(record_number), ref, str(secondary)])
+				to_write += ','.join([str(record_number), ref, str(secondary)])
 
-			to_write += "," + ";".join(junctions) + "\n"
+				to_write += "," + ";".join(junctions) + "\n"
 
-			#print(to_write)
-			if len(to_write) > args.chunk_size:
-				write_out(out, to_write)
-				to_write = ""
+				#print(to_write)
+				if len(to_write) > args.chunk_size:
+					write_out(out, to_write)
+					to_write = ""
 
-			if record_number > args.early_stop > 0:
-				break
+				if record_number > args.early_stop > 0:
+					break
+		except:
+			skipped+=1
 
 		write_out(out, to_write)
 
