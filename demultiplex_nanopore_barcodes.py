@@ -1,6 +1,6 @@
 import argparse
 import dnaio
-from fuzzywuzzy import fuzz
+from rapidfuzz import fuzz
 from os.path import exists
 import gzip
 
@@ -40,6 +40,7 @@ def find_barcode(seq, barcodes, min_score, max_ambiguity):
 	if max(scores) >= min_score:
 		return names[scores.index(max(scores))]
 
+	# else...
 	return -1
 
 
