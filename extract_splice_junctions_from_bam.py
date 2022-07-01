@@ -1,11 +1,5 @@
 import argparse
 import pysam
-from fuzzywuzzy import fuzz
-
-
-
-
-
 
 def write_out(file, to_write):
 	file.write(to_write)
@@ -20,7 +14,7 @@ def main():
 	parser.add_argument("--early_stop", default=-1, type=int)
 	args = parser.parse_args()
 
-
+	to_write = ""
 	with pysam.AlignmentFile(args.bam) as bam, open(args.output, 'w') as out:
 		record_number = 0
 
