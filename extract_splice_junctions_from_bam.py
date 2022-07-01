@@ -45,7 +45,7 @@ def main():
 
 			to_write += "," + ";".join(junctions) + "\n"
 
-			print(to_write)
+			#print(to_write)
 			if len(to_write) > args.chunk_size:
 				write_out(out, to_write)
 				to_write = ""
