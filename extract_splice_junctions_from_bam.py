@@ -15,38 +15,50 @@ def main():
 	args = parser.parse_args()
 
 	output_d = {}
+	skipped = 0
 
 	with pysam.AlignmentFile(args.bam) as bam:
 		record_number = 0
+		for record in bam:
 
-		skipped = 0
-		try:
-			for record in bam:
-				if record.flag == 256:
-					secondary = True
+			try:
+				if record.is_unmapped:
+					to_write = ','.join(["NA", "NA", "NA", "NA"])
+
+					to_write += "," + ";".join([])
+
 				else:
-					secondary = False
 
-				record_number += 1
+					if record.flag == 256:
+						secondary = True
+					else:
+						secondary = False
 
-				if record_number % 10_000 == 0:
-					print(record_number)
+					record_number += 1
 
-				positions = record.get_reference_positions()
+					if record_number % 10_000 == 0:
+						print(record_number)
 
-				mapping_quality = record.mapping_quality
+					positions = record.get_reference_positions()
 
-				ref = record.reference_name
-				junctions = []
+					mapping_quality = record.mapping_quality
 
-				for i in range(len(positions) - 1):
-					distance = positions[i + 1] - positions[i]
-					if distance >= args.min_intron_length:
-						junctions.append(str(positions[i]) + "-" + str(positions[i + 1]))
+					ref = record.reference_name
+					junctions = []
 
-				to_write = ','.join([ref, str(mapping_quality), str(secondary)])
+					if record.is_reverse:
+					 	strand = "-"
+					else:
+					 	strand = "+"
 
-				to_write += "," + ";".join(junctions)
+					for i in range(len(positions) - 1):
+						distance = positions[i + 1] - positions[i]
+						if distance >= args.min_intron_length:
+							junctions.append(str(positions[i]) + "-" + str(positions[i + 1]))
+
+					to_write = ','.join([ref, str(mapping_quality), str(secondary), strand])
+
+					to_write += "," + ";".join(junctions)
 
 				if to_write in output_d.keys():
 					output_d[to_write] += 1
@@ -56,11 +68,11 @@ def main():
 
 				if record_number > args.early_stop > 0:
 					break
-		except:
-			skipped+=1
+			except:
+				skipped+=1
 
 		with open(args.output, 'w') as out:
-			out.write("reference,mapping_quality,secondary,junctions,number_of_reads\n")
+			out.write("reference,mapping_quality,secondary,strand,junctions,number_of_reads\n")
 			for key, value in output_d.items():
 				out.write(key + "," + str(value) + "\n")
 
