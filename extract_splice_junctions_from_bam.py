@@ -14,11 +14,11 @@ def main():
 	parser.add_argument("--early_stop", default=-1, type=int)
 	args = parser.parse_args()
 
-	to_write = ""
-	with pysam.AlignmentFile(args.bam) as bam, open(args.output, 'w') as out:
+	output_d = {}
+
+	with pysam.AlignmentFile(args.bam) as bam:
 		record_number = 0
 
-		out.write("record,reference,secondary,junctions\n")
 		skipped = 0
 		try:
 			for record in bam:
@@ -34,6 +34,8 @@ def main():
 
 				positions = record.get_reference_positions()
 
+				mapping_quality = record.mapping_quality
+
 				ref = record.reference_name
 				junctions = []
 
@@ -42,21 +44,25 @@ def main():
 					if distance >= args.min_intron_length:
 						junctions.append(str(positions[i]) + "-" + str(positions[i + 1]))
 
-				to_write += ','.join([str(record_number), ref, str(secondary)])
+				to_write = ','.join([ref, str(mapping_quality), str(secondary)])
 
-				to_write += "," + ";".join(junctions) + "\n"
+				to_write += "," + ";".join(junctions)
 
-				#print(to_write)
-				if len(to_write) > args.chunk_size:
-					write_out(out, to_write)
-					to_write = ""
+				if to_write in output_d.keys():
+					output_d[to_write] += 1
+				else:
+					output_d[to_write] = 1
+
 
 				if record_number > args.early_stop > 0:
 					break
 		except:
 			skipped+=1
 
-		write_out(out, to_write)
+		with open(args.output, 'w') as out:
+			out.write("reference,mapping_quality,secondary,junctions,number_of_reads\n")
+			for key, value in output_d.items():
+				out.write(key + "," + str(value) + "\n")
 
 	print(str(skipped) + " skipped")
 
