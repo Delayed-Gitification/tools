@@ -41,6 +41,9 @@ def main():
 
 					positions = record.get_reference_positions()
 
+					first_pos = min(positions)
+					last_pos = max(positions)
+
 					mapping_quality = record.mapping_quality
 
 					ref = record.reference_name
@@ -56,7 +59,7 @@ def main():
 						if distance >= args.min_intron_length:
 							junctions.append(str(positions[i]) + "-" + str(positions[i + 1]))
 
-					to_write = ','.join([ref, str(mapping_quality), str(secondary), strand])
+					to_write = ','.join([ref, str(mapping_quality), str(secondary), strand, str(first_pos), str(last_pos)])
 
 					to_write += "," + ";".join(junctions)
 
@@ -72,7 +75,7 @@ def main():
 				skipped+=1
 
 		with open(args.output, 'w') as out:
-			out.write("reference,mapping_quality,secondary,strand,junctions,number_of_reads\n")
+			out.write("reference,mapping_quality,secondary,strand,first_pos,last_pos,junctions,number_of_reads\n")
 			for key, value in output_d.items():
 				out.write(key + "," + str(value) + "\n")
 
